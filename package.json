@@ -1,0 +1,15 @@
+{
+  "name": "ai-task-manager",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["frontend"],
+  "scripts": {
+    "dev": "npm -w frontend run dev",
+    "dev:frontend": "npm -w frontend run dev",
+    "build": "npm -w frontend run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && .venv/bin/pytest",
+    "test:frontend": "npm -w frontend test",
+    "migrate": "cd backend && .venv/bin/alembic upgrade head"
+  }
+}

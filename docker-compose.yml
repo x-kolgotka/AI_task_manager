@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskai
+      POSTGRES_PASSWORD: taskai
+      POSTGRES_DB: ai_task_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskai -d ai_task_manager"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://taskai:taskai@db:5432/ai_task_manager
+      APP_ENV: production
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    environment:
+      APP_ENV: production
+      PORT: "5000"
+      DATABASE_URL: postgresql://taskai:taskai@db:5432/ai_task_manager
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      MISTRAL_MODEL: mistral-small-latest
+      AI_DAILY_LIMIT: "50"
+      SMS_PROVIDER: console
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
