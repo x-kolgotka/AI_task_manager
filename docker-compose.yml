@@ -33,8 +33,8 @@ services:
       DATABASE_URL: postgresql://taskai:taskai@db:5432/ai_task_manager
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret}
-      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-      MISTRAL_MODEL: mistral-small-latest
+      PUTER_API_KEY: ${PUTER_API_KEY}
+      PUTER_MODEL: ${PUTER_MODEL:-gpt-4o-mini}
       AI_DAILY_LIMIT: "50"
       SMS_PROVIDER: console
     depends_on:
