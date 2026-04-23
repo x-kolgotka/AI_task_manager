@@ -1,5 +1,6 @@
 from tests.conftest import register_and_login
 from app.services import sms as sms_svc
+from jose import jwt
 
 
 def test_register_sends_sms(client):
@@ -17,6 +18,19 @@ def test_verify_sms_issues_tokens(client):
     body = r.json()
     assert body["accessToken"] and body["refreshToken"]
     assert body["user"]["phoneVerified"] is True
+
+
+def test_auth_tokens_are_long_lived(client):
+    client.post("/api/auth/register", json={"phone": "+12025551212", "password": "secret123"})
+    code = sms_svc.sent_log()[-1]["code"]
+    r = client.post("/api/auth/verify-sms", json={"phone": "+12025551212", "code": code})
+    assert r.status_code == 200
+    body = r.json()
+    access_claims = jwt.get_unverified_claims(body["accessToken"])
+    refresh_claims = jwt.get_unverified_claims(body["refreshToken"])
+
+    assert access_claims["exp"] - access_claims["iat"] >= 7 * 24 * 60 * 60
+    assert refresh_claims["exp"] - refresh_claims["iat"] >= 180 * 24 * 60 * 60
 
 
 def test_verify_wrong_code(client):

@@ -25,6 +25,7 @@ class ResendSmsIn(BaseModel):
 class LoginIn(BaseModel):
     phone: str
     password: str
+    totpCode: Optional[str] = None
 
 
 class RefreshIn(BaseModel):
@@ -39,6 +40,18 @@ class UserOut(BaseModel):
     fullName: Optional[str] = None
     avatarUrl: Optional[str] = None
     bio: Optional[str] = None
+    email: Optional[str] = None
+    totpEnabled: bool = False
+    isPremium: bool = False
+    points: int = 0
+
+
+class TotpVerifyIn(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
+
+
+class TotpDisableIn(BaseModel):
+    password: str
 
 
 class AuthResponse(BaseModel):
@@ -116,3 +129,11 @@ class AiSplitIn(BaseModel):
 
 class AiEstimateIn(BaseModel):
     taskId: str
+
+
+class AiParseTextIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class AiExtractTagsIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)

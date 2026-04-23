@@ -35,6 +35,13 @@ class User(Base):
     fullName = Column(Text)
     avatarUrl = Column(Text)
     bio = Column(Text)
+    email = Column(Text)
+    emailVerified = Column(Boolean, nullable=False, default=False)
+    totpSecret = Column(Text)
+    totpEnabled = Column(Boolean, nullable=False, default=False)
+    totpBackupCodes = Column(ARRAY(Text), nullable=False, default=list)
+    isPremium = Column(Boolean, nullable=False, default=False)
+    points = Column(Integer, nullable=False, default=0)
     createdAt = Column(DateTime, nullable=False, default=_now)
     updatedAt = Column(DateTime, nullable=False, default=_now, onupdate=_now)
 
@@ -42,6 +49,7 @@ class User(Base):
     sms_codes = relationship("SmsCode", back_populates="user", cascade="all, delete-orphan")
     preferences = relationship("Preferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
     ai_usage = relationship("AiUsage", back_populates="user", cascade="all, delete-orphan")
+    achievements = relationship("Achievement", back_populates="user", cascade="all, delete-orphan")
 
 
 class SmsCode(Base):
@@ -102,8 +110,43 @@ class Preferences(Base):
     colorScheme = Column(Text, nullable=False, default="blue")
     compactList = Column(Boolean, nullable=False, default=False)
     emailNotify = Column(Boolean, nullable=False, default=True)
+    deadlineReminder = Column(Boolean, nullable=False, default=True)
+    weeklyReportEmail = Column(Boolean, nullable=False, default=False)
+    dailyDigest = Column(Boolean, nullable=False, default=False)
 
     user = relationship("User", back_populates="preferences")
+
+
+class Achievement(Base):
+    __tablename__ = "Achievement"
+    id = Column(Text, primary_key=True, default=cuid)
+    userId = Column(Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    badge = Column(Text, nullable=False)
+    title = Column(Text, nullable=False)
+    description = Column(Text)
+    points = Column(Integer, nullable=False, default=0)
+    unlockedAt = Column(DateTime, nullable=False, default=_now)
+
+    user = relationship("User", back_populates="achievements")
+
+
+class EmailVerification(Base):
+    __tablename__ = "EmailVerification"
+    id = Column(Text, primary_key=True, default=cuid)
+    userId = Column(Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    email = Column(Text, nullable=False)
+    code = Column(Text, nullable=False)
+    expiresAt = Column(DateTime, nullable=False)
+    createdAt = Column(DateTime, nullable=False, default=_now)
+
+
+class TaskComment(Base):
+    __tablename__ = "TaskComment"
+    id = Column(Text, primary_key=True, default=cuid)
+    taskId = Column(Text, ForeignKey("Task.id", ondelete="CASCADE"), nullable=False)
+    userId = Column(Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    text = Column(Text, nullable=False)
+    createdAt = Column(DateTime, nullable=False, default=_now)
 
 
 class AiUsage(Base):

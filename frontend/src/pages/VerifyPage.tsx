@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/auth';
+import { useT } from '@/i18n';
 
 export default function VerifyPage() {
+  const t = useT();
   const nav = useNavigate();
   const phone = useAuthStore((s) => s.pendingPhone);
   const setTokens = useAuthStore((s) => s.setTokens);
@@ -30,10 +32,10 @@ export default function VerifyPage() {
       const res = await authApi.verifySms(phone, code);
       setTokens(res.accessToken, res.refreshToken, res.user);
       useAuthStore.getState().setPendingPhone(null);
-      toast.success('Verified!');
+      toast.success(t('verify.verified'));
       nav('/app/tasks');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Invalid code');
+      toast.error(err instanceof Error ? err.message : t('verify.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -43,22 +45,22 @@ export default function VerifyPage() {
     if (!phone || timer > 0) return;
     try {
       await authApi.resendSms(phone);
-      toast.success('Code re-sent');
+      toast.success(t('verify.codeResent'));
       setTimer(30);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to resend');
+      toast.error(err instanceof Error ? err.message : t('verify.resendFailed'));
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-dvh flex items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <form onSubmit={submit} className="card w-full max-w-md space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Verify phone</h1>
-          <p className="text-sm text-gray-500 mt-1">Enter the 6-digit code sent to {phone}.</p>
+          <h1 className="text-2xl font-semibold">{t('verify.title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('verify.hint', { phone: phone ?? '' })}</p>
         </div>
         <div>
-          <label className="label" htmlFor="code">Code</label>
+          <label className="label" htmlFor="code">{t('verify.code')}</label>
           <input
             id="code"
             className="input text-center tracking-[0.5em] text-lg font-mono"
@@ -71,7 +73,7 @@ export default function VerifyPage() {
           />
         </div>
         <button className="btn-primary w-full" disabled={loading || code.length !== 6}>
-          {loading ? 'Verifying…' : 'Verify'}
+          {loading ? t('verify.verifying') : t('verify.verify')}
         </button>
         <button
           type="button"
@@ -79,7 +81,7 @@ export default function VerifyPage() {
           disabled={timer > 0}
           className="btn-ghost w-full text-sm"
         >
-          {timer > 0 ? `Resend in ${timer}s` : 'Resend code'}
+          {timer > 0 ? t('verify.resendIn', { seconds: timer }) : t('verify.resendCode')}
         </button>
       </form>
     </div>

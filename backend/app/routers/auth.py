@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from ..db import get_db
 from ..models import User, SmsCode
-from ..schemas import RegisterIn, VerifySmsIn, ResendSmsIn, LoginIn, RefreshIn, AuthResponse, UserOut
+from ..schemas import RegisterIn, VerifySmsIn, ResendSmsIn, LoginIn, RefreshIn, AuthResponse, UserOut, TotpVerifyIn, TotpDisableIn
 from ..security import hash_password, verify_password, make_access, make_refresh, decode_refresh
 from ..services.sms import send_sms, normalize_phone
+from ..services import totp
 from ..deps import current_user
 from ..ids import cuid
 
@@ -87,11 +88,55 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="invalid credentials")
     if not user.phoneVerified:
         raise HTTPException(status_code=403, detail="phone not verified")
+    if user.totpEnabled:
+        code = (body.totpCode or "").strip()
+        if not code:
+            raise HTTPException(status_code=401, detail="totp required")
+        if not totp.verify(user.totpSecret or "", code) and code not in (user.totpBackupCodes or []):
+            raise HTTPException(status_code=401, detail="invalid totp")
+        if code in (user.totpBackupCodes or []):
+            user.totpBackupCodes = [c for c in user.totpBackupCodes if c != code]
+            db.commit()
     return AuthResponse(
         accessToken=make_access(user.id),
         refreshToken=make_refresh(user.id),
         user=UserOut.model_validate(user),
     )
+
+
+@router.post("/2fa/setup")
+def totp_setup(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    if user.totpEnabled:
+        raise HTTPException(status_code=400, detail="already enabled")
+    secret = totp.new_secret()
+    user.totpSecret = secret
+    db.commit()
+    uri = totp.provisioning_uri(secret, user.phone)
+    return {"secret": secret, "qr": totp.qr_png_data_url(uri), "uri": uri}
+
+
+@router.post("/2fa/verify")
+def totp_activate(body: TotpVerifyIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    if not user.totpSecret:
+        raise HTTPException(status_code=400, detail="setup first")
+    if not totp.verify(user.totpSecret, body.code):
+        raise HTTPException(status_code=400, detail="invalid code")
+    backup = totp.generate_backup_codes()
+    user.totpEnabled = True
+    user.totpBackupCodes = backup
+    db.commit()
+    return {"enabled": True, "backupCodes": backup}
+
+
+@router.post("/2fa/disable")
+def totp_disable(body: TotpDisableIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    if not verify_password(body.password, user.password):
+        raise HTTPException(status_code=401, detail="invalid password")
+    user.totpEnabled = False
+    user.totpSecret = None
+    user.totpBackupCodes = []
+    db.commit()
+    return {"enabled": False}
 
 
 @router.post("/refresh")

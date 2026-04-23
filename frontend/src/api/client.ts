@@ -36,7 +36,12 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
   if (!res.ok) {
-    throw new ApiError(res.status, data.error ?? res.statusText, data.details);
+    let msg = data.detail ?? data.error ?? res.statusText;
+    if (typeof msg === 'string' && msg.startsWith('daily_limit_reached:')) {
+      const limit = msg.split(':')[1];
+      msg = `Daily AI limit reached (${limit} requests). Upgrade to Premium for unlimited access.`;
+    }
+    throw new ApiError(res.status, msg, data.details);
   }
   return data as T;
 }

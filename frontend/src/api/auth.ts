@@ -22,10 +22,10 @@ export const authApi = {
       body: { phone },
       auth: false,
     }),
-  login: (phone: string, password: string) =>
+  login: (phone: string, password: string, totpCode?: string) =>
     api<AuthTokens>('/auth/login', {
       method: 'POST',
-      body: { phone, password },
+      body: { phone, password, ...(totpCode ? { totpCode } : {}) },
       auth: false,
     }),
   refresh: (refreshToken: string) =>
