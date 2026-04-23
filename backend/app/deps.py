@@ -1,8 +1,22 @@
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
 from .db import get_db
 from .security import decode_access
 from .models import User
+from .config import settings
+
+
+def require_admin(authorization: str | None = Header(default=None)) -> None:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="missing token")
+    token = authorization.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, settings.JWT_ACCESS_SECRET, algorithms=["HS256"])
+        if payload.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="admin only")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="invalid token")
 
 
 def current_user(

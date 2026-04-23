@@ -28,6 +28,8 @@ export interface User {
   id: string;
   phone: string;
   phoneVerified: boolean;
+  totpEnabled: boolean;
+  isPremium: boolean;
   fullName: string | null;
   avatarUrl: string | null;
   bio: string | null;

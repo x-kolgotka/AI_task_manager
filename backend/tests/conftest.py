@@ -25,7 +25,7 @@ def _clean_db():
     sms_svc._clear()
     with engine.begin() as conn:
         conn.execute(text(
-            'TRUNCATE "AiCache","AiUsage","Preferences","Subtask","Task","SmsCode","User" RESTART IDENTITY CASCADE'
+            'TRUNCATE "AiCache","AiUsage","Achievement","TaskComment","EmailVerification","Preferences","Subtask","Task","SmsCode","User" RESTART IDENTITY CASCADE'
         ))
     yield
 

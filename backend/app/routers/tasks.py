@@ -7,6 +7,7 @@ from ..models import Task, User, TaskStatus, Priority
 from ..schemas import TaskOut, TaskCreate, TaskUpdate, ReorderIn
 from ..deps import current_user
 from ..ids import cuid
+from ..services import gamification
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -63,6 +64,7 @@ def get_task(task_id: str, user: User = Depends(current_user), db: Session = Dep
 @router.put("/{task_id}", response_model=dict)
 def update_task(task_id: str, body: TaskUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
     t = _owned(db, user, task_id)
+    prev_status = t.status
     data = body.model_dump(exclude_unset=True)
     if "status" in data and data["status"] is not None:
         data["status"] = TaskStatus(data["status"])
@@ -72,7 +74,10 @@ def update_task(task_id: str, body: TaskUpdate, user: User = Depends(current_use
         setattr(t, k, v)
     db.commit()
     db.refresh(t)
-    return {"task": TaskOut.model_validate(t).model_dump(mode="json")}
+    awarded = []
+    if t.status == TaskStatus.DONE and prev_status != TaskStatus.DONE:
+        awarded = [a.badge for a in gamification.on_task_completed(db, user, t)]
+    return {"task": TaskOut.model_validate(t).model_dump(mode="json"), "awarded": awarded}
 
 
 @router.delete("/{task_id}", status_code=204)
