@@ -28,8 +28,8 @@ jobs:
       TEST_DATABASE_URL: postgresql://taskai:taskai@localhost:5432/ai_task_manager_test
       JWT_ACCESS_SECRET: test-access
       JWT_REFRESH_SECRET: test-refresh
-      MISTRAL_API_KEY: test-key
-      MISTRAL_MODEL: mistral-small-latest
+      PUTER_API_KEY: test-key
+      PUTER_MODEL: gpt-4o-mini
       AI_DAILY_LIMIT: "100"
       SMS_PROVIDER: console
     steps:

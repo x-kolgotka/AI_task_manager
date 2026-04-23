@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LoginPage from '../src/pages/LoginPage';
+import { useUiStore } from '../src/store/ui';
 
 const loginMock = vi.fn();
 vi.mock('../src/api/auth', () => ({
@@ -24,7 +25,10 @@ const renderPage = () => {
 };
 
 describe('LoginPage', () => {
-  beforeEach(() => loginMock.mockReset());
+  beforeEach(() => {
+    useUiStore.setState({ language: 'en' });
+    loginMock.mockReset();
+  });
 
   it('submits phone + password', async () => {
     loginMock.mockResolvedValue({
@@ -36,6 +40,6 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/phone/i), '12025551212');
     await userEvent.type(screen.getByLabelText(/password/i), 'secret12');
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
-    await waitFor(() => expect(loginMock).toHaveBeenCalledWith('+12025551212', 'secret12'));
+    await waitFor(() => expect(loginMock).toHaveBeenCalledWith('+12025551212', 'secret12', undefined));
   });
 });
