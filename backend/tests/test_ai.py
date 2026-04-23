@@ -75,3 +75,84 @@ def test_prioritize_needs_two(client):
     _mktask(client, tok)
     r = client.post("/api/ai/prioritize", headers=_h(tok))
     assert r.status_code == 400
+
+
+def test_parse_text(client):
+    tok, _ = register_and_login(client)
+    ai_svc.set_chat_impl(lambda p: json.dumps({
+        "title": "Write docs", "dueDate": "2026-05-01", "priority": "HIGH", "confidence": 0.9
+    }))
+    try:
+        r = client.post("/api/ai/parse-text", json={"text": "Написать доки на 1 мая срочно"}, headers=_h(tok))
+        assert r.status_code == 200
+        d = r.json()
+        assert d["title"] == "Write docs"
+        assert d["dueDate"] == "2026-05-01"
+        assert d["priority"] == "HIGH"
+    finally:
+        ai_svc.set_chat_impl(None)
+
+
+def test_extract_tags(client):
+    tok, _ = register_and_login(client)
+    ai_svc.set_chat_impl(lambda p: json.dumps({"tags": ["backend", "api", "REST"], "confidence": 0.9}))
+    try:
+        r = client.post("/api/ai/extract-tags", json={"text": "Write REST API"}, headers=_h(tok))
+        assert r.status_code == 200
+        d = r.json()
+        assert d["tags"] == ["backend", "api", "rest"]
+    finally:
+        ai_svc.set_chat_impl(None)
+
+
+def test_patterns_needs_history(client):
+    tok, _ = register_and_login(client)
+    r = client.get("/api/ai/patterns", headers=_h(tok))
+    assert r.status_code == 200
+    assert r.json()["patterns"] == []
+
+
+def test_patterns_with_history(client):
+    tok, _ = register_and_login(client)
+    for i in range(3):
+        _mktask(client, tok, f"t{i}")
+    ai_svc.set_chat_impl(lambda p: json.dumps({
+        "patterns": [{"category": "dev", "avgHours": 2.0, "count": 3}],
+        "insights": ["You work fast on Mondays"],
+        "prediction": {"hours": 1.5, "confidence": 0.7},
+    }))
+    try:
+        r = client.get("/api/ai/patterns", headers=_h(tok))
+        assert r.status_code == 200
+        assert r.json()["insights"] == ["You work fast on Mondays"]
+    finally:
+        ai_svc.set_chat_impl(None)
+
+
+def test_coach(client):
+    tok, _ = register_and_login(client)
+    for i in range(3):
+        _mktask(client, tok, f"t{i}")
+    ai_svc.set_chat_impl(lambda p: json.dumps({"insights": [
+        {"type": "tip", "message": "slow down", "recommendation": "take a break"}
+    ]}))
+    try:
+        r = client.get("/api/ai/coach", headers=_h(tok))
+        assert r.status_code == 200
+        assert r.json()["insights"][0]["message"] == "slow down"
+    finally:
+        ai_svc.set_chat_impl(None)
+
+
+def test_weekly_report(client):
+    tok, _ = register_and_login(client)
+    _mktask(client, tok, "recent")
+    ai_svc.set_chat_impl(lambda p: json.dumps({"recommendations": ["focus more"]}))
+    try:
+        r = client.get("/api/ai/weekly-report", headers=_h(tok))
+        assert r.status_code == 200
+        d = r.json()
+        assert "summary" in d
+        assert d["recommendations"] == ["focus more"]
+    finally:
+        ai_svc.set_chat_impl(None)

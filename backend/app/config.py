@@ -9,13 +9,19 @@ class Settings(BaseSettings):
     TEST_DATABASE_URL: str = "postgresql://arturboev@localhost:5432/ai_task_manager_test"
     JWT_ACCESS_SECRET: str = "dev-access"
     JWT_REFRESH_SECRET: str = "dev-refresh"
-    JWT_ACCESS_TTL_MIN: int = 15
-    JWT_REFRESH_TTL_DAYS: int = 30
+    JWT_ACCESS_TTL_MIN: int = 7 * 24 * 60
+    JWT_REFRESH_TTL_DAYS: int = 180
     PORT: int = 5000
     APP_ENV: str = "development"
     MISTRAL_API_KEY: str = ""
     MISTRAL_MODEL: str = "mistral-small-latest"
-    AI_DAILY_LIMIT: int = 10
+    PUTER_API_KEY: str = ""
+    PUTER_MODEL: str = "gpt-4o-mini"
+    AI_DAILY_LIMIT: int = 8
+    AI_DAILY_LIMIT_PREMIUM: int = 0  # 0 = unlimited
+    PREMIUM_CODE: str = "PREMIUM2025"
+    ADMIN_PHONE: str = "+10000000000"
+    ADMIN_PASSWORD: str = "admin123"
     SMS_PROVIDER: str = "console"
 
     @property
