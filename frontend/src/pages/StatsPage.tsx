@@ -1,9 +1,22 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { differenceInDays, format, startOfDay, subDays } from 'date-fns';
+import type { Locale } from 'date-fns';
+import { enUS, es as esLocale, ru } from 'date-fns/locale';
 import { tasksApi } from '@/api/tasks';
+import { useT } from '@/i18n';
+import { Language, useUiStore } from '@/store/ui';
+
+const dateLocales = {
+  en: enUS,
+  ru,
+  es: esLocale,
+} satisfies Record<Language, Locale>;
 
 export default function StatsPage() {
+  const t = useT();
+  const language = useUiStore((s) => s.language);
+  const dateLocale = dateLocales[language];
   const { data } = useQuery({ queryKey: ['tasks', 'all'], queryFn: () => tasksApi.list() });
   const tasks = data?.tasks ?? [];
 
@@ -25,7 +38,7 @@ export default function StatsPage() {
 
     const last7 = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
     const byDay = last7.map((d) => ({
-      day: format(d, 'EEE'),
+      day: format(d, 'EEE', { locale: dateLocale }),
       done: tasks.filter(
         (t) =>
           t.status === 'DONE' &&
@@ -35,23 +48,23 @@ export default function StatsPage() {
     const maxDone = Math.max(1, ...byDay.map((d) => d.done));
 
     return { total, done, doing, todo, doneToday, overdue, byDay, maxDone };
-  }, [tasks]);
+  }, [dateLocale, tasks]);
 
   return (
-    <div className="p-4 pb-20 md:pb-4 space-y-6">
-      <h1 className="text-xl font-semibold">Statistics</h1>
+    <div className="p-4 mobile-page-bottom md:pb-4 space-y-6">
+      <h1 className="text-xl font-semibold">{t('stats.title')}</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Total" value={stats.total} />
-        <Stat label="Done" value={stats.done} tone="green" />
-        <Stat label="In progress" value={stats.doing} tone="blue" />
-        <Stat label="To do" value={stats.todo} />
-        <Stat label="Done today" value={stats.doneToday} tone="green" />
-        <Stat label="Overdue" value={stats.overdue} tone="red" />
+        <Stat label={t('stats.total')} value={stats.total} />
+        <Stat label={t('status.done')} value={stats.done} tone="green" />
+        <Stat label={t('status.inProgress')} value={stats.doing} tone="blue" />
+        <Stat label={t('status.todo')} value={stats.todo} />
+        <Stat label={t('stats.doneToday')} value={stats.doneToday} tone="green" />
+        <Stat label={t('calendar.status.overdue')} value={stats.overdue} tone="red" />
       </div>
 
       <div className="card">
-        <h2 className="font-medium mb-3">Last 7 days — tasks completed</h2>
+        <h2 className="font-medium mb-3">{t('stats.last7')}</h2>
         <div className="flex items-end gap-2 h-32">
           {stats.byDay.map((d) => (
             <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
