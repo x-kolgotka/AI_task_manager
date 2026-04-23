@@ -57,7 +57,7 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-      - run: npm install --no-audit --no-fund
+      - run: rm -f package-lock.json && npm install --no-audit --no-fund
       - run: npm -w frontend exec tsc -- --noEmit
       - run: npm -w frontend test
       - run: npm -w frontend run build

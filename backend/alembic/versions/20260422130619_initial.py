@@ -11,8 +11,8 @@ branch_labels = None
 depends_on = None
 
 
-task_status = postgresql.ENUM("TODO", "IN_PROGRESS", "DONE", name="TaskStatus")
-priority = postgresql.ENUM("LOW", "MEDIUM", "HIGH", "URGENT", name="Priority")
+task_status = postgresql.ENUM("TODO", "IN_PROGRESS", "DONE", name="TaskStatus", create_type=False)
+priority = postgresql.ENUM("LOW", "MEDIUM", "HIGH", "URGENT", name="Priority", create_type=False)
 
 
 def upgrade() -> None:
