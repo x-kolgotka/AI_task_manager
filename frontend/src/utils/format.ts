@@ -1,8 +1,13 @@
 export const formatPhoneInput = (raw: string): string => {
   const digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
-  return '+' + digits;
+  const trimmed = raw.trimStart();
+  if (!digits) return trimmed.startsWith('+') ? '+' : '';
+  if (trimmed.startsWith('+') || !raw.includes('+')) return '+' + digits;
+  return digits;
 };
+
+export const getPhoneError = (phone: string): string | null =>
+  /^\+?\d+$/.test(phone) ? null : 'Некорректный формат номера';
 
 export const priorityColor = (p: string) =>
   p === 'URGENT' || p === 'HIGH'
