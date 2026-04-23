@@ -52,8 +52,13 @@ export default function TaskForm({
   const fileRef = useRef<HTMLInputElement | null>(null);
   const complexityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const hasSpeech = typeof window !== 'undefined' &&
+    !!(( window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
   const [parsing, setParsing] = useState(false);
   const [listening, setListening] = useState(false);
+  const [showVoiceFallback, setShowVoiceFallback] = useState(false);
+  const [voiceFallbackText, setVoiceFallbackText] = useState('');
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrDrafts, setOcrDrafts] = useState<{ title: string; status: string }[]>([]);
   const [voiceSubtasks, setVoiceSubtasks] = useState<string[]>([]);
@@ -97,10 +102,28 @@ export default function TaskForm({
     });
   };
 
+  const parseVoiceText = async (text: string) => {
+    setParsing(true);
+    try {
+      const r = await aiApi.parseVoice(text);
+      setV(prev => ({
+        ...prev,
+        title: r.title || text,
+        dueDate: r.dueDate ?? prev.dueDate,
+        priority: (r.priority as Priority) ?? prev.priority,
+      }));
+      if (r.subtasks.length > 0) setVoiceSubtasks(r.subtasks);
+      setShowVoiceFallback(false);
+      setVoiceFallbackText('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally { setParsing(false); }
+  };
+
   const startVoice = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { toast.error(t('ai.voiceNotSupported')); return; }
+    if (!SR) { setShowVoiceFallback(true); return; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rec = new SR() as any;
     rec.lang = document.documentElement.lang || 'ru-RU';
@@ -112,19 +135,7 @@ export default function TaskForm({
     rec.onresult = async (e: any) => {
       const text = e.results[0][0].transcript;
       setListening(false);
-      setParsing(true);
-      try {
-        const r = await aiApi.parseVoice(text);
-        setV(prev => ({
-          ...prev,
-          title: r.title || text,
-          dueDate: r.dueDate ?? prev.dueDate,
-          priority: (r.priority as Priority) ?? prev.priority,
-        }));
-        if (r.subtasks.length > 0) setVoiceSubtasks(r.subtasks);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : String(err));
-      } finally { setParsing(false); }
+      await parseVoiceText(text);
     };
     rec.onerror = () => setListening(false);
     rec.onend = () => setListening(false);
@@ -230,7 +241,7 @@ export default function TaskForm({
             className={`px-3 shrink-0 rounded-lg border transition ${listening ? 'bg-red-100 border-red-400 text-red-600 dark:bg-red-900/30' : 'btn-ghost'}`}
             onClick={listening ? undefined : startVoice}
             aria-label={listening ? t('ai.voiceStop') : t('ai.voiceStart')}
-            title={listening ? t('ai.voiceStop') : t('ai.voiceStart')}
+            title={listening ? t('ai.voiceStop') : hasSpeech ? t('ai.voiceStart') : t('ai.voiceNotSupported')}
           >
             {listening ? <MicOff size={16} /> : <Mic size={16} />}
           </button>
@@ -254,6 +265,37 @@ export default function TaskForm({
           />
         </div>
         {listening && <p className="mt-1 text-xs text-red-500 animate-pulse">{t('ai.voiceListening')}</p>}
+        {showVoiceFallback && (
+          <div className="mt-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
+            <p className="text-xs text-gray-500">{t('ai.voiceFallbackHint')}</p>
+            <textarea
+              className="input text-sm resize-none"
+              rows={2}
+              placeholder={t('ai.voiceFallbackPlaceholder')}
+              value={voiceFallbackText}
+              onChange={e => setVoiceFallbackText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-ai text-xs px-3 py-1.5"
+                disabled={!voiceFallbackText.trim() || parsing}
+                onClick={() => parseVoiceText(voiceFallbackText.trim())}
+              >
+                <Sparkles size={12} className="inline mr-1" />
+                {t('ai.voiceFallbackSubmit')}
+              </button>
+              <button
+                type="button"
+                className="text-xs text-gray-400 hover:text-gray-600"
+                onClick={() => { setShowVoiceFallback(false); setVoiceFallbackText(''); }}
+              >
+                {t('task.cancel')}
+              </button>
+            </div>
+          </div>
+        )}
         {ocrLoading && <p className="mt-1 text-xs text-gray-500 animate-pulse">{t('ai.imageProcessing')}</p>}
         {voiceSubtasks.length > 0 && (
           <div className="mt-2 rounded-lg border border-brand/30 bg-brand/5 p-2 space-y-1">
