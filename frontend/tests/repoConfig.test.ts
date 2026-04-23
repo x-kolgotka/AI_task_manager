@@ -21,4 +21,22 @@ describe('repository runtime configuration', () => {
     expect(compose).toContain('"alembic", "upgrade", "head"');
     expect(compose).not.toContain(removedBackendDir);
   });
+
+  it('ships installable PWA metadata and an offline app shell worker', () => {
+    const manifestPath = path.join(repoRoot, 'frontend', 'public', 'manifest.webmanifest');
+    const workerPath = path.join(repoRoot, 'frontend', 'public', 'service-worker.js');
+    const indexHtml = readFileSync(path.join(repoRoot, 'frontend', 'index.html'), 'utf8');
+
+    expect(existsSync(manifestPath)).toBe(true);
+    expect(existsSync(workerPath)).toBe(true);
+    expect(indexHtml).toContain('rel="manifest"');
+
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const worker = readFileSync(workerPath, 'utf8');
+    expect(manifest.name).toBe('Task Management AI');
+    expect(manifest.display).toBe('standalone');
+    expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
+    expect(worker).toContain('task-ai-shell');
+    expect(worker).toContain('fetch');
+  });
 });

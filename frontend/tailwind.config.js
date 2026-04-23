@@ -6,8 +6,8 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#2563EB',
-          hover: '#1D4ED8',
+          DEFAULT: 'rgb(var(--color-brand) / <alpha-value>)',
+          hover: 'rgb(var(--color-brand-hover) / <alpha-value>)',
         },
         ai: '#F59E0B',
         surface: '#F9FAFB',

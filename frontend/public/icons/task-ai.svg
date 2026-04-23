@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">TaskAI icon</title>
+  <desc id="desc">Blue task board with a white checkmark and gold AI spark.</desc>
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <path d="M146 264l68 68 150-166" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M365 318l18 43 43 18-43 18-18 43-18-43-43-18 43-18 18-43z" fill="#f59e0b"/>
+  <path d="M134 119h155" fill="none" stroke="#bfdbfe" stroke-width="28" stroke-linecap="round"/>
+  <path d="M134 176h102" fill="none" stroke="#bfdbfe" stroke-width="28" stroke-linecap="round"/>
+</svg>

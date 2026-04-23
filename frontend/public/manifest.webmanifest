@@ -1,0 +1,26 @@
+{
+  "name": "Task Management AI",
+  "short_name": "TaskAI",
+  "description": "AI-assisted task management with calendar, analytics, achievements, and offline launch support.",
+  "start_url": "/app/tasks",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563EB",
+  "background_color": "#f8fafc",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/task-ai.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/task-ai-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
