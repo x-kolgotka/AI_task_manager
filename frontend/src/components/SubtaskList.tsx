@@ -1,11 +1,14 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useId, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { subtasksApi } from '@/api/tasks';
 import { Subtask } from '@/types';
+import { useT } from '@/i18n';
 
 export default function SubtaskList({ taskId, subtasks }: { taskId: string; subtasks: Subtask[] }) {
+  const t = useT();
+  const inputId = useId();
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
 
@@ -47,11 +50,9 @@ export default function SubtaskList({ taskId, subtasks }: { taskId: string; subt
     <div className="space-y-2">
       {total > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span>
-            {done}/{total} done
-          </span>
+          <span>{t('subtasks.done', { done, total })}</span>
           <div className="flex-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-            <div className="h-full bg-brand transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-brand transition-[width]" style={{ width: `${pct}%` }} />
           </div>
         </div>
       )}
@@ -63,7 +64,7 @@ export default function SubtaskList({ taskId, subtasks }: { taskId: string; subt
               checked={s.completed}
               onChange={() => toggleMut.mutate(s)}
               className="h-5 w-5 rounded accent-brand"
-              aria-label={`Toggle ${s.title}`}
+              aria-label={t('subtasks.toggle', { title: s.title })}
             />
             <span className={s.completed ? 'line-through text-gray-400 flex-1' : 'flex-1'}>
               {s.title}
@@ -72,24 +73,29 @@ export default function SubtaskList({ taskId, subtasks }: { taskId: string; subt
               ) : null}
             </span>
             <button
+              type="button"
               onClick={() => delMut.mutate(s.id)}
               className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"
-              aria-label={`Delete ${s.title}`}
+              aria-label={t('subtasks.delete', { title: s.title })}
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} aria-hidden="true" />
             </button>
           </li>
         ))}
       </ul>
       <form onSubmit={submit} className="flex gap-2">
+        <label htmlFor={inputId} className="sr-only">{t('subtasks.newLabel')}</label>
         <input
+          id={inputId}
+          name="subtaskTitle"
+          autoComplete="off"
           className="input flex-1"
-          placeholder="New subtask…"
+          placeholder={t('subtasks.new')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <button type="submit" className="btn-ghost px-3" disabled={!title.trim()}>
-          <Plus size={18} />
+        <button type="submit" className="btn-ghost px-3" disabled={!title.trim()} aria-label={t('subtasks.add')}>
+          <Plus size={18} aria-hidden="true" />
         </button>
       </form>
     </div>

@@ -3,6 +3,15 @@ import { priorityColor } from '@/utils/format';
 import { Calendar, CheckSquare } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+import type { Locale } from 'date-fns';
+import { enUS, es as esLocale, ru } from 'date-fns/locale';
+import { Language, useUiStore } from '@/store/ui';
+
+const dateLocales = {
+  en: enUS,
+  ru,
+  es: esLocale,
+} satisfies Record<Language, Locale>;
 
 export default function TaskCard({
   task,
@@ -15,6 +24,8 @@ export default function TaskCard({
   selected?: boolean;
   compact?: boolean;
 }) {
+  const language = useUiStore((s) => s.language);
+  const dateLocale = dateLocales[language];
   const totalSub = task.subtasks?.length ?? 0;
   const doneSub = task.subtasks?.filter((s) => s.completed).length ?? 0;
   const pct = totalSub ? Math.round((doneSub / totalSub) * 100) : 0;
@@ -37,20 +48,24 @@ export default function TaskCard({
         >
           {task.priority}
         </span>
-        <h3 className="font-medium flex-1 line-clamp-2">{task.title}</h3>
+        <h3 className="font-medium flex-1 break-words whitespace-normal max-h-20 overflow-y-auto" title={task.title}>
+          {task.title}
+        </h3>
       </div>
       {!compact && task.description && (
-        <p className="text-sm text-gray-500 line-clamp-2">{task.description}</p>
+        <p className="text-sm text-gray-500 break-words whitespace-pre-wrap max-h-24 overflow-y-auto" title={task.description}>
+          {task.description}
+        </p>
       )}
       <div className="flex items-center gap-3 text-xs text-gray-500 mt-auto">
         {task.dueDate && (
           <span className="inline-flex items-center gap-1">
-            <Calendar size={12} /> {format(new Date(task.dueDate), 'MMM d')}
+            <Calendar size={12} aria-hidden="true" /> {format(new Date(task.dueDate), 'MMM d', { locale: dateLocale })}
           </span>
         )}
         {totalSub > 0 && (
           <span className="inline-flex items-center gap-1">
-            <CheckSquare size={12} /> {doneSub}/{totalSub}
+            <CheckSquare size={12} aria-hidden="true" /> {doneSub}/{totalSub}
           </span>
         )}
         {totalSub > 0 && (
