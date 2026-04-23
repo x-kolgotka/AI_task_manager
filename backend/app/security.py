@@ -14,10 +14,16 @@ def verify_password(p: str, h: str) -> bool:
     return pwd.verify(p, h)
 
 
-def _make_token(sub: str, secret: str, minutes: int) -> str:
+def _make_token(sub: str, secret: str, minutes: int, extra: dict | None = None) -> str:
     now = datetime.now(tz=timezone.utc)
     payload = {"sub": sub, "iat": int(now.timestamp()), "exp": int((now + timedelta(minutes=minutes)).timestamp())}
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def make_admin_token() -> str:
+    return _make_token("admin", settings.JWT_ACCESS_SECRET, 60 * 8, {"role": "admin"})
 
 
 def make_access(user_id: str) -> str:
